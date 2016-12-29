@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow.contrib import learn
 from tensorflow.contrib import layers
 
-import gan_model
+import model
 import visualization
 
 
@@ -60,18 +60,18 @@ def main():
   if mode == 'gan':
     params.update({
       'discriminator': partial(conv_discriminator, hidden_size=10),
-      'loss_builder': gan_model.make_gan_loss
+      'loss_builder': model.make_gan_loss
     })
   elif mode == 'ebgan':
     params.update({
       'discriminator': partial(linear_autoencoder_discriminator, output_dim=28,
           hidden_sizes=[50], encoding_dim=5),
-      'loss_builder': partial(gan_model.make_ebgan_loss, epsilon=0.05)
+      'loss_builder': partial(model.make_ebgan_loss, epsilon=0.05)
     })
   tf.logging._logger.setLevel(logging.INFO)
   mnist_data = learn.datasets.load_dataset('mnist')
   est = learn.SKCompat(learn.Estimator(
-      model_fn=gan_model.gan_model, model_dir='models/gan_mnist/', params=params))
+      model_fn=model.gan_model, model_dir='models/gan_mnist/', params=params))
 
   # Select subset of images.
   mnist_class = None

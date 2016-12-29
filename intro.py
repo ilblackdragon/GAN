@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow.contrib import learn
 from tensorflow.contrib import layers
 
-import gan_model
+import model
 
 
 def linear_generator(x, hidden_size):
@@ -43,18 +43,18 @@ def main():
   if mode == 'gan':
     params.update({
       'discriminator': partial(linear_discriminator, hidden_size=10),
-      'loss_builder': gan_model.make_gan_loss
+      'loss_builder': model.make_gan_loss
     })
   elif mode == 'ebgan':
     params.update({
       'discriminator': partial(autoencoder_discriminator, hidden_size=10),
-      'loss_builder': partial(gan_model.make_ebgan_loss, epsilon=0.0001)
+      'loss_builder': partial(model.make_ebgan_loss, epsilon=0.0001)
     })
   tf.logging._logger.setLevel(logging.INFO)
   data = np.random.normal(4, 0.5, 10000).astype(np.float32)
   data.sort()
   est = learn.SKCompat(learn.Estimator(
-      model_fn=gan_model.gan_model, model_dir='models/gan_intro/', params=params))
+      model_fn=model.gan_model, model_dir='models/gan_intro/', params=params))
   print_monitor = tf.train.LoggingTensorHook(['loss_discr', 'loss_generator'],
       every_n_iter=100)
   est.fit(x=data, y=data, steps=10000, batch_size=32, monitors=[print_monitor])

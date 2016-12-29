@@ -33,12 +33,17 @@ def gan_model(feature, unused_target, mode, params):
   generator = params.get('generator')
   discriminator = params.get('discriminator')
   loss_builder = params.get('loss_builder')
+  feature_processor = params.get('feature_processor', lambda f: f)
+  generated_postprocess = params.get('generated_postprocess', lambda f: f)
   z_dim = params.get('z_dim')
   initial_learning_rate = params.get('learning_rate', 0.05)
   decay_steps = params.get('decay_steps', 150)
   decay_rate = params.get('decay_rate', 0.95)
 
-  # Create noise Z.
+  # Process features.
+  feature = feature_processor(feature)
+
+  # Create uniform [-1, 1] noise Z of shape [batch_size, z_dim].
   z = tf.random_uniform(tf.pack([tf.shape(feature)[0], z_dim]), -1, 1, dtype=feature.dtype)
   z.set_shape([feature.get_shape()[0], z_dim])
 
@@ -84,6 +89,7 @@ def gan_model(feature, unused_target, mode, params):
       loss_generator, gc, variables=generator_params,
       learning_rate=learning_rate, optimizer='Adam', summaries=[])
 
-  return (feature_generated, loss_discr + loss_generator,
+  predictions = generated_postprocess(feature_generated)
+  return (predictions, loss_discr + loss_generator,
     tf.group(discriminator_train_op, generator_train_op))
 

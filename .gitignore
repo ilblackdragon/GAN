@@ -1,7 +1,18 @@
+# virtualenv
+.env
+env
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# data
+MNIST-data/
+
+# models
+models/
 
 # C extensions
 *.so
