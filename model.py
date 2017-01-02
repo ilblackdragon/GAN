@@ -29,6 +29,7 @@ def norm(x):
 
  
 def gan_model(feature, unused_target, mode, params):
+  """Customizable GAN model."""
   # Retrieve params
   generator = params.get('generator')
   discriminator = params.get('discriminator')
@@ -92,4 +93,28 @@ def gan_model(feature, unused_target, mode, params):
   predictions = generated_postprocess(feature_generated)
   return (predictions, loss_discr + loss_generator,
     tf.group(discriminator_train_op, generator_train_op))
+
+
+def autoencoder_model(feature, target, mode, params):
+  """Autoencodes features with given function."""
+  autoencoder_fn = params.get('autoencoder_fn')
+
+  prediction, _ = autoencoder_fn(feature)
+  prediction = tf.identity(prediction, name='generated')
+  loss = tf.contrib.losses.mean_squared_error(feature, prediction)
+  train_op = layers.optimize_loss(
+      loss, tf.train.get_global_step(),
+      learning_rate=params['learning_rate'],
+      optimizer=params.get('optimizer', 'Adam'))
+  return prediction, loss, train_op
+
+
+def make_autoencoder(autoencoder_fn, model_dir, params=None):
+  if params is None:
+    params = {'learning_rate': 0.0001}
+  params.update({
+    'autoencoder_fn': autoencoder_fn,
+  })
+  return learn.Estimator(
+    model_fn=autoencoder_model, model_dir=model_dir, params=params)
 
