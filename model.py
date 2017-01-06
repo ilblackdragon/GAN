@@ -76,7 +76,7 @@ def gan_model(feature, unused_target, mode, params):
   # Optimize Generator and Discriminator separately.
   variables = tf.trainable_variables()
   generator_params = [v for v in variables if v.name.startswith('Generator/')]
-  discriminator_params = [v for v in variables if v.name.startswith('Discriminator/')]
+  discriminator_params = [v for v in variables if not v.name.startswith('Generator/')]
   gc = tf.contrib.framework.get_global_step()
 #  learning_rate = tf.train.exponential_decay(
 #    initial_learning_rate, gc, decay_steps, decay_rate, staircase=True)
@@ -98,14 +98,25 @@ def gan_model(feature, unused_target, mode, params):
 def autoencoder_model(feature, target, mode, params):
   """Autoencodes features with given function."""
   autoencoder_fn = params.get('autoencoder_fn')
+  feature_processor = params.get('feature_processor', lambda f: f)
+  generated_postprocess = params.get('generated_postprocess', lambda f: f)
 
-  prediction, _ = autoencoder_fn(feature)
-  prediction = tf.identity(prediction, name='generated')
-  loss = tf.contrib.losses.mean_squared_error(feature, prediction)
+  # Process features.
+  feature = feature_processor(feature)
+
+  # Auto-encode.
+  generated, _ = autoencoder_fn(feature)
+
+  # Loss and training.
+  loss = tf.contrib.losses.mean_squared_error(feature, generated)
   train_op = layers.optimize_loss(
       loss, tf.train.get_global_step(),
       learning_rate=params['learning_rate'],
       optimizer=params.get('optimizer', 'Adam'))
+ 
+  # Post process generated.
+  prediction = generated_postprocess(generated)
+  prediction = tf.identity(prediction, name='generated')
   return prediction, loss, train_op
 
 

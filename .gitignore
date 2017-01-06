@@ -10,6 +10,7 @@ __pycache__/
 
 # data
 MNIST-data/
+dbpedia_data/
 
 # models
 models/
